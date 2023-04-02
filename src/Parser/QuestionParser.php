@@ -29,7 +29,7 @@ class QuestionParser
                 },
             );
 
-        return array_filter($questions);
+        return \array_values(array_filter($questions));
     }
 
     private function parseQuestionCard(Crawler $questionCard): ?Question
@@ -63,23 +63,28 @@ class QuestionParser
 
     private function parseQuestionValue(Crawler $questionCard): string
     {
-        $start = $questionCard->filter('.content > p')->first();
-        $questionFirstLine = $start->text(null, false);
-        $questionNextLines = '';
-        foreach ($start->nextAll() as $element) {
+        $contentCard = $questionCard->filter('.content')->eq(1);
+        $result = '';
+        foreach ($contentCard->children() as $i => $element) {
             $elementCrawler = new Crawler($element);
-            if (str_contains($element->textContent, 'Correct') || str_contains($element->textContent, 'Wrong')) {
+            $elementText = $elementCrawler->text(null, false);
+            if ($elementCrawler->matches('h2') || $elementCrawler->matches('.right.floated')) {
+                continue;
+            }
+            if (str_contains($elementText, 'Correct') || str_contains($elementText, 'Wrong')) {
                 break;
             }
-            $questionNextLines .= "\n" . $elementCrawler->text(null, false);
-        }
-        if (str_ends_with($questionNextLines, 'PHP')) {
-            if (!str_starts_with($questionNextLines, '<?php')) {
-                $questionNextLines = "<?php\n" . $questionNextLines;
+
+            if ($elementCrawler->matches('.code-toolbar') && $elementCrawler->children('.language-php')->count() > 0) {
+                if (!str_starts_with($result, '<?php')) {
+                    $elementText = "<?php\n" . $elementText;
+                }
+                $elementText = $this->highlighter->getWholeFile($elementText);
             }
-            $questionNextLines = $this->highlighter->getWholeFile($questionNextLines);
+            $result .= $elementText . "\n";
         }
-        return $questionFirstLine . $questionNextLines;
+
+        return $result;
     }
 
     /**
@@ -104,7 +109,7 @@ class QuestionParser
         $correctHeader = $questionCard->filter('h3:contains("Correct")');
         if ($correctHeader->count() === 0) {
 
-            return [];
+//            return [];
             // todo: wrong!
             throw new \InvalidArgumentException('No correct answers');
         }
