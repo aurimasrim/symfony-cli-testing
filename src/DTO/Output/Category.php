@@ -8,13 +8,10 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class Category
 {
-    /**
-     * @param Question[] $questions
-     */
     public function __construct(
         #[SerializedName('category')]
         private readonly string $name,
-        private array $questions = [],
+        private readonly UniqueQuestionCollection $questions = new UniqueQuestionCollection(),
     ) {
     }
 
@@ -23,16 +20,13 @@ class Category
         return $this->name;
     }
 
-    /**
-     * @return Question[]
-     */
-    public function getQuestions(): array
+    public function getQuestions(): UniqueQuestionCollection
     {
         return $this->questions;
     }
 
     public function addQuestion(Question $question): void
     {
-        $this->questions[] = $question;
+        $this->questions->addQuestion($question);
     }
 }
