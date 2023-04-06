@@ -14,6 +14,7 @@ class Question
     public function __construct(
         private readonly string $question,
         private readonly array $answers,
+        private readonly string $help,
     ) {
     }
 
@@ -28,6 +29,11 @@ class Question
     public function getAnswers(): array
     {
         return $this->answers;
+    }
+
+    public function getHelp(): string
+    {
+        return $this->help;
     }
 
     /**

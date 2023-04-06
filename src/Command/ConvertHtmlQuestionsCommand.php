@@ -35,6 +35,8 @@ class ConvertHtmlQuestionsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // todo: read existing questions and merge with new ones
+
         $files = $this->getFiles($input);
         $questionGroups = [];
         foreach ($files as $file) {
@@ -50,6 +52,10 @@ class ConvertHtmlQuestionsCommand extends Command
                 $this->serializer->serialize($category, 'yaml', ['yaml_inline' => 4]),
             );
         }
+
+        $output->writeln('Categories converted: ' . \count($categoryCollection));
+        $output->writeln('Questions converted: ' . $categoryCollection->countQuestions());
+
 
         return 0;
     }

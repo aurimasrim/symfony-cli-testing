@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Output;
 
-class UniqueQuestionCollection implements \IteratorAggregate
+class UniqueQuestionCollection implements \IteratorAggregate, \Countable
 {
     /**
      * @param Question[] $questions
@@ -41,5 +41,10 @@ class UniqueQuestionCollection implements \IteratorAggregate
     public function getIterator(): \ArrayIterator
     {
         return new \ArrayIterator($this->questions);
+    }
+
+    public function count(): int
+    {
+        return count($this->questions);
     }
 }

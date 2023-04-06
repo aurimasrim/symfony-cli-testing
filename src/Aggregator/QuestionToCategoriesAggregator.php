@@ -51,6 +51,7 @@ class QuestionToCategoriesAggregator
         return new Question(
             $question->getQuestion(),
             $answers,
+            $question->getHelp(),
         );
     }
 }

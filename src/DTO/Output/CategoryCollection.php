@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Output;
 
-class CategoryCollection implements \IteratorAggregate
+class CategoryCollection implements \IteratorAggregate, \Countable
 {
     /**
      * @param Category[] $categories
@@ -30,5 +30,20 @@ class CategoryCollection implements \IteratorAggregate
     public function getIterator(): \ArrayIterator
     {
         return new \ArrayIterator($this->categories);
+    }
+
+    public function count(): int
+    {
+        return count($this->categories);
+    }
+
+    public function countQuestions(): int
+    {
+        $count = 0;
+        foreach ($this->categories as $category) {
+            $count += \count($category->getQuestions());
+        }
+
+        return $count;
     }
 }

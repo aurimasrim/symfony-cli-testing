@@ -39,8 +39,9 @@ class QuestionParser
             $question = $this->parseQuestionValue($questionCard);
             $answers = $this->parseAnswers($questionCard);
             $correctAnswers = $this->parseCorrectAnswers($questionCard);
+            $help = $this->parseHelp($questionCard);
 
-            return new Question($question, $answers, $correctAnswers ,'', $category);
+            return new Question($question, $answers, $correctAnswers, $help, $category);
         } catch (\InvalidArgumentException) {
             return null;
         }
@@ -96,9 +97,7 @@ class QuestionParser
             ->ancestors()
             ->eq(0)
             ->filter('ul > li')
-            ->each(
-                static fn (Crawler $answer): string => $answer->text(),
-            );
+            ->each(fn (Crawler $answer): string => $this->getAnswerText($answer));
     }
 
     /**
@@ -118,8 +117,25 @@ class QuestionParser
             ->ancestors()
             ->eq(0)
             ->filter('ul > li')
-            ->each(
-                static fn (Crawler $answer): string => $answer->text(),
-            );
+            ->each(fn (Crawler $answer): string => $this->getAnswerText($answer));
+    }
+
+    private function getAnswerText(Crawler $answer): string
+    {
+        return $answer->text(null, false);
+    }
+
+    private function parseHelp(Crawler $questionCard): string
+    {
+        $helpHeader = $questionCard->filter('h3:contains("Help")');
+        if ($helpHeader->count() === 0) {
+            return '';
+        }
+
+        return $helpHeader
+            ->ancestors()
+            ->eq(0)
+            ->children(':not(h3)')
+            ->text();
     }
 }
