@@ -9,6 +9,7 @@ use App\Parser\QuestionParser;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
@@ -30,7 +31,8 @@ class ConvertHtmlQuestionsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('input-dir', InputArgument::REQUIRED);
+        $this->addArgument('input-dir', InputArgument::REQUIRED)
+            ->addOption('include-without-answers', null, InputOption::VALUE_NONE, 'Include questions without correct answers');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -40,7 +42,10 @@ class ConvertHtmlQuestionsCommand extends Command
         $files = $this->getFiles($input);
         $questionGroups = [];
         foreach ($files as $file) {
-            $questionGroups[] = $this->questionParser->parse($file->getContents());
+            $questionGroups[] = $this->questionParser->parse(
+                $file->getContents(),
+                (bool)$input->getOption('include-without-answers'),
+            );
         }
         $questions = \array_merge(...$questionGroups);
 

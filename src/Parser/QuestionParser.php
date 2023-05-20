@@ -18,27 +18,31 @@ class QuestionParser
     /**
      * @return Question[]
      */
-    public function parse(string $html): array
+    public function parse(string $html, bool $includeWithoutCorrectAnswers = false): array
     {
         $crawler = new Crawler();
         $crawler->addHtmlContent($html);
         $questions = $crawler->filter('div.ui.card')
             ->each(
-                function (Crawler $questionCard): ?Question {
-                    return $this->parseQuestionCard($questionCard);
+                function (Crawler $questionCard) use ($includeWithoutCorrectAnswers): ?Question {
+                    return $this->parseQuestionCard($questionCard, $includeWithoutCorrectAnswers);
                 },
             );
 
-        return \array_values(array_filter($questions));
+        return \array_values(
+            array_filter(
+                $questions,
+            )
+        );
     }
 
-    private function parseQuestionCard(Crawler $questionCard): ?Question
+    private function parseQuestionCard(Crawler $questionCard, bool $includeWithoutCorrectAnswers): ?Question
     {
         try {
             $category = $this->parseCategory($questionCard);
             $question = $this->parseQuestionValue($questionCard);
             $answers = $this->parseAnswers($questionCard);
-            $correctAnswers = $this->parseCorrectAnswers($questionCard);
+            $correctAnswers = $this->parseCorrectAnswers($questionCard, $includeWithoutCorrectAnswers);
             $help = $this->parseHelp($questionCard);
 
             return new Question($question, $answers, $correctAnswers, $help, $category);
@@ -77,8 +81,11 @@ class QuestionParser
             }
 
             if ($elementCrawler->matches('.code-toolbar') && $elementCrawler->children('.language-php')->count() > 0) {
-                if (!str_starts_with($result, '<?php')) {
+                if (!str_starts_with($elementText, '<?php')) {
                     $elementText = "<?php\n" . $elementText;
+                }
+                if (str_ends_with($elementText, 'PHP')) {
+                    $elementText = substr($elementText, 0, -3);
                 }
                 $elementText = $this->highlighter->getWholeFile($elementText);
             }
@@ -103,14 +110,12 @@ class QuestionParser
     /**
      * @return string[]
      */
-    private function parseCorrectAnswers(Crawler $questionCard): array
+    private function parseCorrectAnswers(Crawler $questionCard, bool $includeWithoutCorrectAnswers): array
     {
         $correctHeader = $questionCard->filter('h3:contains("Correct")');
         if ($correctHeader->count() === 0) {
 
-//            return [];
-            // todo: wrong!
-            throw new \InvalidArgumentException('No correct answers');
+            return $includeWithoutCorrectAnswers ? [] : throw new \InvalidArgumentException('No correct answers');
         }
 
         return $correctHeader
@@ -122,7 +127,28 @@ class QuestionParser
 
     private function getAnswerText(Crawler $answer): string
     {
-        return $answer->text(null, false);
+        $resultLines = [];
+        foreach ($answer->children() as $i => $element) {
+            $elementCrawler = new Crawler($element);
+            $elementText = $elementCrawler->text(null, false);
+
+            if ($elementCrawler->matches('.code-toolbar') && $elementCrawler->children('.language-php')->count() > 0) {
+                if (!str_starts_with($elementText, '<?php')) {
+                    if (str_contains($elementText, "\n")) {
+                        $elementText = "<?php\n" . $elementText;
+                    } else {
+                        $elementText = "<?php " . $elementText;
+                    }
+                }
+                if (str_ends_with($elementText, 'PHP')) {
+                    $elementText = substr($elementText, 0, -3);
+                }
+                $elementText = $this->highlighter->getWholeFile($elementText);
+            }
+            $resultLines[] = $elementText;
+        }
+
+        return implode("\n", $resultLines);
     }
 
     private function parseHelp(Crawler $questionCard): string
