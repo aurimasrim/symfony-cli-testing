@@ -9,13 +9,11 @@ use App\DTO\Output\Category;
 use App\DTO\Output\CategoryCollection;
 use App\DTO\Output\Question;
 use App\DTO\Question as InputQuestion;
+use App\DTO\QuestionCollection;
 
 class QuestionToCategoriesAggregator
 {
-    /**
-     * @param InputQuestion[] $questions
-     */
-    public function aggregate(array $questions): CategoryCollection
+    public function aggregate(QuestionCollection $questions): CategoryCollection
     {
         $categoryCollection = new CategoryCollection();
         foreach ($questions as $question) {

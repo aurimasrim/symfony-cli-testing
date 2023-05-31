@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Parser;
 
 use App\DTO\Question;
+use App\DTO\QuestionCollection;
 use PHP_Parallel_Lint\PhpConsoleHighlighter\Highlighter;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -15,10 +16,7 @@ class QuestionParser
     ) {
     }
 
-    /**
-     * @return Question[]
-     */
-    public function parse(string $html, bool $includeWithoutCorrectAnswers = false): array
+    public function parse(string $html, bool $includeWithoutCorrectAnswers = false): QuestionCollection
     {
         $crawler = new Crawler();
         $crawler->addHtmlContent($html);
@@ -29,11 +27,7 @@ class QuestionParser
                 },
             );
 
-        return \array_values(
-            array_filter(
-                $questions,
-            )
-        );
+        return new QuestionCollection(\array_values(array_filter($questions)));
     }
 
     private function parseQuestionCard(Crawler $questionCard, bool $includeWithoutCorrectAnswers): ?Question

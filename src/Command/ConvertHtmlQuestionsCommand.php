@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Aggregator\QuestionToCategoriesAggregator;
+use App\DTO\Question;
+use App\DTO\QuestionCollection;
 use App\Parser\QuestionParser;
+use Certificationy\Collections\Questions;
+use Certificationy\Interfaces\QuestionInterface;
+use Certificationy\Loaders\YamlLoader;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -38,17 +43,23 @@ class ConvertHtmlQuestionsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // todo: read existing questions and merge with new ones
+        $yamlLoader = new YamlLoader(['var/data']);
+        $questions = $yamlLoader->all();
+        $existingQuestions = $this->convertQuestions($questions);
+
 
         $files = $this->getFiles($input);
-        $questionGroups = [];
+        $questions = new QuestionCollection();
         foreach ($files as $file) {
-            $questionGroups[] = $this->questionParser->parse(
-                $file->getContents(),
-                (bool)$input->getOption('include-without-answers'),
+            $questions->merge(
+                $this->questionParser->parse(
+                    $file->getContents(),
+                    (bool)$input->getOption('include-without-answers'),
+                ),
             );
         }
-        $questions = \array_merge(...$questionGroups);
 
+        $questions = $existingQuestions->mergeUnique($questions);
         $categoryCollection = $this->questionToCategoriesAggregator->aggregate($questions);
 
         foreach ($categoryCollection as $category) {
@@ -77,5 +88,26 @@ class ConvertHtmlQuestionsCommand extends Command
             ->files()
             ->depth(0)
             ->getIterator();
+    }
+
+    private function convertQuestions(Questions $questions): QuestionCollection
+    {
+        $questionCollection = new QuestionCollection();
+        foreach ($questions as $question) {
+            $questionCollection->add($this->convertQuestion($question));
+        }
+
+        return $questionCollection;
+    }
+
+    private function convertQuestion(QuestionInterface $question): Question
+    {
+        return new Question(
+            $question->getQuestion(),
+            $question->getAnswersLabels(),
+            $question->getCorrectAnswersValues(),
+            $question->getHelp(),
+            $question->getCategory(),
+        );
     }
 }
