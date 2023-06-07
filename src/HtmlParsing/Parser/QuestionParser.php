@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Parser;
+namespace App\HtmlParsing\Parser;
 
-use App\DTO\Question;
-use App\DTO\QuestionCollection;
+use App\HtmlParsing\DTO\Question;
+use App\HtmlParsing\DTO\QuestionCollection;
 use PHP_Parallel_Lint\PhpConsoleHighlighter\Highlighter;
 use Symfony\Component\DomCrawler\Crawler;
 

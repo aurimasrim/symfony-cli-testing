@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Aggregator\QuestionToCategoriesAggregator;
-use App\DTO\Question;
-use App\DTO\QuestionCollection;
-use App\Parser\QuestionParser;
+use App\HtmlParsing\Aggregator\QuestionToCategoriesAggregator;
+use App\HtmlParsing\DTO\Question;
+use App\HtmlParsing\DTO\QuestionCollection;
+use App\HtmlParsing\Parser\QuestionParser;
 use Certificationy\Collections\Questions;
 use Certificationy\Interfaces\QuestionInterface;
 use Certificationy\Loaders\YamlLoader;

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Aggregator;
+namespace App\HtmlParsing\Aggregator;
 
-use App\DTO\Output\Answer;
-use App\DTO\Output\Category;
-use App\DTO\Output\CategoryCollection;
-use App\DTO\Output\Question;
-use App\DTO\Question as InputQuestion;
-use App\DTO\QuestionCollection;
+use App\HtmlParsing\DTO\Output\Answer;
+use App\HtmlParsing\DTO\Output\Category;
+use App\HtmlParsing\DTO\Output\CategoryCollection;
+use App\HtmlParsing\DTO\Output\Question;
+use App\HtmlParsing\DTO\Question as InputQuestion;
+use App\HtmlParsing\DTO\QuestionCollection;
 
 class QuestionToCategoriesAggregator
 {
