@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use Certificationy\Collections\Questions;
-use Certificationy\Loaders\YamlLoader as Loader;
+use App\Testing\YamlLoader as Loader;
 use Certificationy\Set;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -67,7 +67,7 @@ class TestCommand extends Command
         $categories = (array) $input->getArgument('categories');
         $number = (int) $input->getOption('number');
 
-        $set = Set::create($yamlLoader->load($number, $categories, $onlyUnanswered));
+        $set = Set::create($yamlLoader->load($number, $categories, $onlyUnanswered)->get($number, $onlyUnanswered));
 
         if ($set->getQuestions()->count() > 0) {
             $output->writeln(
@@ -133,6 +133,8 @@ class TestCommand extends Command
             $output->writeln(sprintf('<comment>✎ Your answer</comment>: %s', $answer));
             $output->writeln('');
         }
+
+
     }
 
     /**
