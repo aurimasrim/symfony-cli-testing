@@ -14,7 +14,7 @@ class YamlLoader
     private $questions;
 
     /**
-     * @var string
+     * @var string[]
      */
     private $paths;
 

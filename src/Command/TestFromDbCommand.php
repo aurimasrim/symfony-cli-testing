@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Entity\Submission;
 use Certificationy\Collections\Questions;
 use App\Testing\YamlLoader as Loader;
 use Certificationy\Set;
@@ -16,20 +17,22 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Yaml\Yaml;
 use App\Repository\QuestionRepository;
+use App\TestingFromDb\DatabaseLoader;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Based on Certificationy\Cli\Command\StartCommand
  */
-class TestCommand extends Command
+class TestFromDbCommand extends Command
 {
-    protected static $defaultName = 'certificationy:test';
+    protected static $defaultName = 'certificationy:test-from-db';
 
     /**
      * @var int
      */
     public const WORDWRAP_NUMBER = 80;
 
-    public function __construct(private QuestionRepository $questionRepository)
+    public function __construct(private DatabaseLoader $databaseLoader, private EntityManagerInterface $entityManager)
     {
         parent::__construct();
     }
@@ -57,27 +60,22 @@ class TestCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $config = $this->path(is_string($input->getOption('config')) ? $input->getOption('config') : null);
-        $fileContent = (string) file_get_contents($config);
-        $paths = Yaml::parse($fileContent);
-
-        $yamlLoader = new Loader($paths);
         $onlyUnanswered = (bool)$input->getOption('only-unanswered');
 
-        if ($input->getOption('list')) {
-            $output->writeln($yamlLoader->categories($onlyUnanswered));
+        // if ($input->getOption('list')) {
+        //     $output->writeln($yamlLoader->categories($onlyUnanswered));
 
-            return 1;
-        }
+        //     return 1;
+        // }
 
         $categories = (array) $input->getArgument('categories');
         $number = (int) $input->getOption('number');
 
-        $set = Set::create($yamlLoader->load($number, $categories, $onlyUnanswered)->get($number, $onlyUnanswered));
+        $set = Set::create($this->databaseLoader->load($number, $categories, $onlyUnanswered)->getWeighted($number, $onlyUnanswered));
 
         if ($set->getQuestions()->count() > 0) {
             $output->writeln(
-                sprintf('Starting a new set of <info>%s</info> questions (available questions: <info>%s</info>)', count($set->getQuestions()), count($yamlLoader->all()))
+                sprintf('Starting a new set of <info>%s</info> questions (available questions: <info>%s</info>)', count($set->getQuestions()), count($this->databaseLoader->all()))
             );
 
             $this->askQuestions($set, $input, $output);
@@ -167,7 +165,17 @@ class TestCommand extends Command
                 $isCorrect ? '<info>✔</info>' : '<error>✗</error>',
                 (null !== $help) ? wordwrap($help, self::WORDWRAP_NUMBER, "\n") : '',
             ];
+
+            
+            $question->getEntity()->incrementTotalCount();
+            if ($isCorrect) {
+                $question->getEntity()->incrementCorrectCount();
+            }
         }
+
+        $submission = new Submission($set->getCorrectAnswers()->count(), $set->getQuestions()->count());
+        $this->entityManager->persist($submission);
+        $this->entityManager->flush();
 
         if ($results) {
             $tableHelper = new Table($output);
